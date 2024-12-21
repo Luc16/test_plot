@@ -22,13 +22,20 @@ include_directories(
         external/glfw/include/
         external/glm/
         external/stb/
-        external/imgui/)
+        external/imgui/
+        external/implot/)
 file(GLOB imgui CONFIGURE_DEPENDS "external/imgui/*.cpp")
+file(GLOB implot CONFIGURE_DEPENDS "external/implot/*.cpp")
 
 find_package(OpenGL REQUIRED)
 
-add_executable(${PROJECT_NAME} src/main.cpp external/glad/src/glad.c)
+add_executable(example_window src/example.cpp external/glad/src/glad.c)
 
-target_link_libraries(${PROJECT_NAME} glfw
+target_link_libraries(example_window glfw
         ${GLFW_LIBRARIES} ${GLAD_LIBRARIES} ${imgui} OpenGL::GL)
 
+
+add_executable(main src/main.cpp external/glad/src/glad.c)
+
+target_link_libraries(main glfw
+        ${GLFW_LIBRARIES} ${GLAD_LIBRARIES} ${imgui} ${implot} OpenGL::GL)
