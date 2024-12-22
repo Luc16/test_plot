@@ -23,7 +23,8 @@ include_directories(
         external/glm/
         external/stb/
         external/imgui/
-        external/implot/)
+        external/implot/
+)
 file(GLOB imgui CONFIGURE_DEPENDS "external/imgui/*.cpp")
 file(GLOB implot CONFIGURE_DEPENDS "external/implot/*.cpp")
 
