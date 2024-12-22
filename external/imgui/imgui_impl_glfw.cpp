@@ -100,7 +100,7 @@
 #endif
 
 // GLFW
-#include <GLFW/glfw3.h>
+#include <../glfw/include/GLFW/glfw3.h>
 
 #ifdef _WIN32
 #undef APIENTRY
