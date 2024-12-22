@@ -13,11 +13,14 @@
 #include "stb_image.h"
 #include <iostream>
 #include <vector>
-#include <fstream>
 #include <chrono>
+#include <sstream>
+#include <cassert>
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
+
+FILE* ffmpegFile = nullptr;
 
 static void glfw_error_callback(int error, const char* description)
 {
@@ -54,6 +57,47 @@ void saveFrameBufferToPNG(GLuint fbo, int width, int height, const char* filenam
     stbi_write_png(filename, width, height, 4, pixels.data(), width * 4);
 
     std::cout << "Time to write PNG: " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start).count() << "ms" << std::endl;
+}
+
+void startRecording(const char* filename, int width, int height) {
+    // Allocate memory to store the pixel data
+    width += width % 2;
+    height += height % 2;
+
+    std::stringstream ss;
+    ss << "ffmpeg -r 60 -f rawvideo -pix_fmt rgba -s " << width << "x" << height << " -i - -threads 0 -preset fast -y -pix_fmt yuv420p -crf 21 -vf vflip " << filename;
+    auto cmd = ss.str();
+
+// open pipe to ffmpeg's stdin in binary write mode
+    assert(ffmpegFile == nullptr);
+    ffmpegFile = popen(cmd.c_str(), "w");
+    if (ffmpegFile == nullptr) {
+        std::cerr << "Error opening ffmpeg pipe" << std::endl;
+        exit(1);
+    }
+}
+
+void endRecording() {
+    assert(ffmpegFile != nullptr);
+    pclose(ffmpegFile);
+    ffmpegFile = nullptr;
+}
+
+void recordFrame(GLuint fbo, int width, int height) {
+    // Allocate memory to store the pixel data
+    auto start = std::chrono::high_resolution_clock::now();
+    std::vector<unsigned char> pixels(width * height * 4);
+
+    // Bind the framebuffer and read the pixel data
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    std::cout << "Writing frame to: " << ffmpegFile  << std::endl;
+
+    // Write the pixel data to the ffmpeg pipe
+    fwrite(pixels.data(), sizeof(unsigned char)*pixels.size(), 1, ffmpegFile);
+    std::cout << "Time to read pixels: " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start).count() << "ms" << std::endl;
 }
 
 const char *vertexShaderSource = "#version 330 core\n"
@@ -131,7 +175,7 @@ int main(int, char**)
     ImGui_ImplOpenGL3_Init(glsl_version);
 
     unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
+    glShaderSource(vertexShader, 1, &vertexShaderSource, nullptr);
     glCompileShader(vertexShader);
     // check for shader compile errors
     int success;
@@ -139,18 +183,18 @@ int main(int, char**)
     glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
     if (!success)
     {
-        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
+        glGetShaderInfoLog(vertexShader, 512, nullptr, infoLog);
         std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
     }
     // fragment shader
     unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
+    glShaderSource(fragmentShader, 1, &fragmentShaderSource, nullptr);
     glCompileShader(fragmentShader);
     // check for shader compile errors
     glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
     if (!success)
     {
-        glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
+        glGetShaderInfoLog(fragmentShader, 512, nullptr, infoLog);
         std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
     }
     // link shaders
@@ -161,7 +205,7 @@ int main(int, char**)
     // check for linking errors
     glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
     if (!success) {
-        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+        glGetProgramInfoLog(shaderProgram, 512, nullptr, infoLog);
         std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
     }
     glDeleteShader(vertexShader);
@@ -176,7 +220,7 @@ int main(int, char**)
 
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
@@ -248,6 +292,7 @@ int main(int, char**)
 
 
     // Our state
+    bool recording = false;
     bool show_demo_window = false;
     bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
@@ -322,7 +367,7 @@ int main(int, char**)
 
                 ImGui::Separator();
 
-                if (ImGui::MenuItem("Close", NULL, false, true))
+                if (ImGui::MenuItem("Close", nullptr, false, true))
                     open = false;
                 ImGui::EndMenu();
             }
@@ -350,6 +395,8 @@ int main(int, char**)
             ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
             ImGui::Checkbox("Another Window", &show_another_window);
 
+            ImGui::Text("Image window size: %f, %f", prev_size.x, prev_size.y);
+
             ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
             ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
             ImGui::Separator();
@@ -364,6 +411,26 @@ int main(int, char**)
                 auto start = std::chrono::high_resolution_clock::now();
                 saveFrameBufferToPNG(fbo, (int) prev_size.x, (int) prev_size.y, "frame.png");
                 std::cout << "Time to save: " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start).count() << "ms" << std::endl;
+            }
+
+            if (ImGui::Button("Start recording")) {
+                if (!recording) {
+                    startRecording("output.mp4", (int) prev_size.x, (int) prev_size.y);
+                    recording = true;
+                    glfwSetWindowAttrib(window, GLFW_RESIZABLE, false);
+                }
+            }
+
+            if (ImGui::Button("End recording")) {
+                if (recording) {
+                    endRecording();
+                    recording = false;
+                    glfwSetWindowAttrib(window, GLFW_RESIZABLE, true);
+                }
+            }
+
+            if (recording) {
+                ImGui::Text("Recording...");
             }
 
             ImGui::Text("Mouse Position: (%.1f,%.1f)", io.MousePos.x, io.MousePos.y);
@@ -409,8 +476,22 @@ int main(int, char**)
             }
 
             else {
+
                 float display_w = ImGui::GetContentRegionAvail().x;
                 float display_h = ImGui::GetContentRegionAvail().y;
+
+                if (recording) {
+
+                    auto w = (int) display_w;
+                    auto h = (int) display_h;
+
+                    if (w % 2 != 0) {
+                        display_w++;
+                    }
+                    if (h % 2 != 0) {
+                        display_h++;
+                    }
+                }
 
                 if (prev_size.x != display_w || prev_size.y != display_h) {
                     glViewport(0, 0, (int) display_w, (int) display_h);
@@ -447,6 +528,9 @@ int main(int, char**)
                 );
 
                 glBindFramebuffer(GL_FRAMEBUFFER, 0);
+                if (recording) {
+                    recordFrame(fbo, (int) display_w, (int) display_h);
+                }
 
             }
 
