@@ -40,3 +40,12 @@ add_executable(main src/main.cpp external/glad/src/glad.c)
 
 target_link_libraries(main glfw
         ${GLFW_LIBRARIES} ${GLAD_LIBRARIES} ${imgui} ${implot} OpenGL::GL)
+
+add_subdirectory(matplotplusplus)
+set(MATPLOTPP_BUILD_EXPERIMENTAL_OPENGL_BACKEND ON CACHE BOOL "Enable OpenGL backend")
+
+add_executable(matplottest src/matplottest.cpp)
+target_link_libraries(matplottest PRIVATE matplot matplot_opengl)
+
+add_subdirectory(morphologica)
+

@@ -59,6 +59,69 @@ void saveFrameBufferToPNG(GLuint fbo, int width, int height, const char* filenam
     std::cout << "Time to write PNG: " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start).count() << "ms" << std::endl;
 }
 
+void saveWindowToPNG(int width, int height, const char* filename) {
+    static bool created_frame_buffer = false;
+    static GLuint fbo;
+    static GLuint texture;
+    static GLuint rbo;
+
+    if (!created_frame_buffer) {
+        glGenFramebuffers(1, &fbo);
+        glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+        glGenTextures(1, &texture);
+        glBindTexture(GL_TEXTURE_2D, texture);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
+
+
+        glGenRenderbuffers(1, &rbo);
+        glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+
+        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+            std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glBindRenderbuffer(GL_RENDERBUFFER, 0);
+        created_frame_buffer = true;
+    }
+
+    glViewport(0, 0, width, height);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+    glBindRenderbuffer(GL_RENDERBUFFER, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+    auto color = ImGui::GetStyle().Colors[ImGuiCol_WindowBg];
+    glClearColor(color.x * color.w, color.y * color.w, color.z * color.w, color.w);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    auto dl = ImGui::GetWindowDrawList();
+
+    static ImDrawData drawData = ImDrawData();
+    drawData.Clear();
+    drawData.Valid = true;
+    drawData.DisplayPos = ImGui::GetWindowPos();
+    drawData.DisplaySize = ImGui::GetWindowSize();
+    drawData.FramebufferScale = ImVec2(1.0f, 1.0f);
+    drawData.AddDrawList(dl);
+
+
+    ImGui_ImplOpenGL3_RenderDrawData(&drawData);
+
+
+    saveFrameBufferToPNG(fbo, width, height, filename);
+
+}
+
 void startRecording(const char* filename, int width, int height) {
     // Allocate memory to store the pixel data
     width += width % 2;
@@ -159,8 +222,8 @@ int main(int, char**)
 
 
     // Setup Dear ImGui style
-    ImGui::StyleColorsDark();
-    //ImGui::StyleColorsLight();
+//    ImGui::StyleColorsDark();
+    ImGui::StyleColorsLight();
 
     // When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.
     ImGuiStyle& style = ImGui::GetStyle();
@@ -211,80 +274,80 @@ int main(int, char**)
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 
-    unsigned int fbo;
-
-    glGenFramebuffers(1, &fbo);
-    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-
-    unsigned int texture;
-
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
-
-    unsigned int rbo;
-
-    glGenRenderbuffers(1, &rbo);
-    glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
-
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-        std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glBindRenderbuffer(GL_RENDERBUFFER, 0);
-
-
-    // set up vertex data (and buffer(s)) and configure vertex attributes
-    // ------------------------------------------------------------------
+//    unsigned int fbo;
+//
+//    glGenFramebuffers(1, &fbo);
+//    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+//
+//    unsigned int texture;
+//
+//    glGenTextures(1, &texture);
+//    glBindTexture(GL_TEXTURE_2D, texture);
+//    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+//    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
+//
+//    unsigned int rbo;
+//
+//    glGenRenderbuffers(1, &rbo);
+//    glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+//    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+//    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+//
+//    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+//        std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
+//    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+//    glBindTexture(GL_TEXTURE_2D, 0);
+//    glBindRenderbuffer(GL_RENDERBUFFER, 0);
+//
+//
+//    // set up vertex data (and buffer(s)) and configure vertex attributes
+//    // ------------------------------------------------------------------
+////    float vertices[] = {
+////            0.5f,  0.5f, 0.0f,  // top right
+////            0.5f, -0.5f, 0.0f,  // bottom right
+////            -0.5f, -0.5f, 0.0f,  // bottom left
+////            -0.5f,  0.5f, 0.0f   // top left
+////    };
 //    float vertices[] = {
-//            0.5f,  0.5f, 0.0f,  // top right
-//            0.5f, -0.5f, 0.0f,  // bottom right
-//            -0.5f, -0.5f, 0.0f,  // bottom left
-//            -0.5f,  0.5f, 0.0f   // top left
+//            -0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+//            0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+//            0.0f,  0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f,
 //    };
-    float vertices[] = {
-            -0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-            0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f,
-            0.0f,  0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f,
-    };
-    unsigned int indices[] = {  // note that we start from 0!
-            0, 1, 2,  // Triangle
-//            0, 1, 3,  // first Triangle
-//            1, 2, 3   // second Triangle
-    };
-    unsigned int VBO, VAO, EBO;
-
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-    glGenBuffers(1, &EBO);
-    // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
-    glBindVertexArray(VAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*) (3*sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    // note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    // remember: do NOT unbind the EBO while a VAO is active as the bound element buffer object IS stored in the VAO; keep the EBO bound.
-    //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-    // You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
-    // VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
-    glBindVertexArray(0);
+//    unsigned int indices[] = {  // note that we start from 0!
+//            0, 1, 2,  // Triangle
+////            0, 1, 3,  // first Triangle
+////            1, 2, 3   // second Triangle
+//    };
+//    unsigned int VBO, VAO, EBO;
+//
+//    glGenVertexArrays(1, &VAO);
+//    glGenBuffers(1, &VBO);
+//    glGenBuffers(1, &EBO);
+//    // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
+//    glBindVertexArray(VAO);
+//
+//    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+//    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+//
+//    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+//    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+//
+//    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)0);
+//    glEnableVertexAttribArray(0);
+//    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*) (3*sizeof(float)));
+//    glEnableVertexAttribArray(1);
+//
+//    // note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
+//    glBindBuffer(GL_ARRAY_BUFFER, 0);
+//
+//    // remember: do NOT unbind the EBO while a VAO is active as the bound element buffer object IS stored in the VAO; keep the EBO bound.
+//    //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+//
+//    // You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
+//    // VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
+//    glBindVertexArray(0);
 
 
     // uncomment this call to draw in wireframe polygons.
@@ -295,6 +358,7 @@ int main(int, char**)
     bool recording = false;
     bool show_demo_window = false;
     bool show_another_window = false;
+    bool save_graph = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
     ImGuiWindowClass window_class;
@@ -401,15 +465,16 @@ int main(int, char**)
             ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
             ImGui::Separator();
             ImGui::Text("Triangle Colors");
-            ImGui::ColorEdit3("Vertex 1", (float*)&vertices[3]);
-            ImGui::ColorEdit3("Vertex 2", (float*)&vertices[10]);
-            ImGui::ColorEdit3("Vertex 3", (float*)&vertices[17]);
+//            ImGui::ColorEdit3("Vertex 1", (float*)&vertices[3]);
+//            ImGui::ColorEdit3("Vertex 2", (float*)&vertices[10]);
+//            ImGui::ColorEdit3("Vertex 3", (float*)&vertices[17]);
 
             ImGui::Separator();
 
             if (ImGui::Button("save")) {
                 auto start = std::chrono::high_resolution_clock::now();
-                saveFrameBufferToPNG(fbo, (int) prev_size.x, (int) prev_size.y, "frame.png");
+                save_graph = true;
+//                saveFrameBufferToPNG(fbo, (int) prev_size.x, (int) prev_size.y, "frame.png");
                 std::cout << "Time to save: " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start).count() << "ms" << std::endl;
             }
 
@@ -441,6 +506,12 @@ int main(int, char**)
             ImGui::Text("counter = %d", counter);
 
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+
+            if (ImGui::Button("test_save_window")) {
+                float display_w = ImGui::GetWindowSize().x;
+                float display_h = ImGui::GetWindowSize().y;
+                saveWindowToPNG((int) display_w, (int) display_h, "window.png");
+            }
             ImGui::End();
         }
 
@@ -451,7 +522,7 @@ int main(int, char**)
             ImGui::Begin("Image Window", nullptr, ImGuiWindowFlags_NoTitleBar);
 
             // implot
-            if (false){
+            if (true){
                 srand(0);
                 static float xs1[100], ys1[100];
                 for (int i = 0; i < 100; ++i) {
@@ -473,66 +544,75 @@ int main(int, char**)
                     ImPlot::PopStyleVar();
                     ImPlot::EndPlot();
                 }
+
+                if (save_graph) {
+                    auto start = std::chrono::high_resolution_clock::now();
+                    save_graph = false;
+                    float display_w = ImGui::GetWindowSize().x;
+                    float display_h = ImGui::GetWindowSize().y;
+                    saveWindowToPNG((int) display_w, (int) display_h, "graph.png");
+                    std::cout << "Time to save graph: " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start).count() << "ms" << std::endl;
+                }
             }
-
-            else {
-
-                float display_w = ImGui::GetContentRegionAvail().x;
-                float display_h = ImGui::GetContentRegionAvail().y;
-
-                if (recording) {
-
-                    auto w = (int) display_w;
-                    auto h = (int) display_h;
-
-                    if (w % 2 != 0) {
-                        display_w++;
-                    }
-                    if (h % 2 != 0) {
-                        display_h++;
-                    }
-                }
-
-                if (prev_size.x != display_w || prev_size.y != display_h) {
-                    glViewport(0, 0, (int) display_w, (int) display_h);
-                    glBindTexture(GL_TEXTURE_2D, texture);
-                    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, (int) display_w, (int) display_h, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-                    glBindTexture(GL_TEXTURE_2D, 0);
-                    glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-                    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (int) display_w, (int) display_h);
-                    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
-                    glBindRenderbuffer(GL_RENDERBUFFER, 0);
-                    prev_size = ImVec2(display_w, display_h);
-                }
-
-                glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-                glBindBuffer(GL_ARRAY_BUFFER, VBO);
-                glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-                glViewport(0, 0, (int) display_w, (int) display_h);
-                glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
-                glClear(GL_COLOR_BUFFER_BIT);
-
-                // draw our first triangle
-                glUseProgram(shaderProgram);
-                glBindVertexArray(VAO); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
-                //glDrawArrays(GL_TRIANGLES, 0, 6);
-                glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
-                // glBindVertexArray(0); // no need to unbind it every time
-
-                ImGui::Image(
-                        (ImTextureID)texture,
-                        ImGui::GetContentRegionAvail(),
-                        ImVec2(0, 1),
-                        ImVec2(1, 0)
-                );
-
-                glBindFramebuffer(GL_FRAMEBUFFER, 0);
-                if (recording) {
-                    recordFrame(fbo, (int) display_w, (int) display_h);
-                }
-
-            }
+//
+//            else {
+//
+//                float display_w = ImGui::GetContentRegionAvail().x;
+//                float display_h = ImGui::GetContentRegionAvail().y;
+//
+//                if (recording) {
+//
+//                    auto w = (int) display_w;
+//                    auto h = (int) display_h;
+//
+//                    if (w % 2 != 0) {
+//                        display_w++;
+//                    }
+//                    if (h % 2 != 0) {
+//                        display_h++;
+//                    }
+//                }
+//
+//                if (prev_size.x != display_w || prev_size.y != display_h) {
+//                    glViewport(0, 0, (int) display_w, (int) display_h);
+//                    glBindTexture(GL_TEXTURE_2D, texture);
+//                    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, (int) display_w, (int) display_h, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+//                    glBindTexture(GL_TEXTURE_2D, 0);
+//                    glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+//                    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (int) display_w, (int) display_h);
+//                    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+//                    glBindRenderbuffer(GL_RENDERBUFFER, 0);
+//                    prev_size = ImVec2(display_w, display_h);
+//                }
+//
+//                glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+//                glBindBuffer(GL_ARRAY_BUFFER, VBO);
+//                glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+//
+//                glViewport(0, 0, (int) display_w, (int) display_h);
+//                glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
+//                glClear(GL_COLOR_BUFFER_BIT);
+//
+//                // draw our first triangle
+//                glUseProgram(shaderProgram);
+//                glBindVertexArray(VAO); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
+//                //glDrawArrays(GL_TRIANGLES, 0, 6);
+//                glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
+//                // glBindVertexArray(0); // no need to unbind it every time
+//
+//                ImGui::Image(
+//                        (ImTextureID)texture,
+//                        ImGui::GetContentRegionAvail(),
+//                        ImVec2(0, 1),
+//                        ImVec2(1, 0)
+//                );
+//
+//                glBindFramebuffer(GL_FRAMEBUFFER, 0);
+//                if (recording) {
+//                    recordFrame(fbo, (int) display_w, (int) display_h);
+//                }
+//
+//            }
 
             ImGui::End();
         }
@@ -560,13 +640,13 @@ int main(int, char**)
         is_first_frame = false;
     }
 
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
-    glDeleteBuffers(1, &EBO);
+//    glDeleteVertexArrays(1, &VAO);
+//    glDeleteBuffers(1, &VBO);
+//    glDeleteBuffers(1, &EBO);
     glDeleteProgram(shaderProgram);
-    glDeleteFramebuffers(1, &fbo);
-    glDeleteTextures(1, &texture);
-    glDeleteRenderbuffers(1, &rbo);
+//    glDeleteFramebuffers(1, &fbo);
+//    glDeleteTextures(1, &texture);
+//    glDeleteRenderbuffers(1, &rbo);
 
     // Cleanup
     ImGui_ImplOpenGL3_Shutdown();
