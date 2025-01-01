@@ -59,11 +59,14 @@ void saveFrameBufferToPNG(GLuint fbo, int width, int height, const char* filenam
     std::cout << "Time to write PNG: " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start).count() << "ms" << std::endl;
 }
 
-void saveWindowToPNG(int width, int height, const char* filename) {
+void saveCurrentWindowToPNG(const char* filename) {
     static bool created_frame_buffer = false;
     static GLuint fbo;
     static GLuint texture;
     static GLuint rbo;
+
+    int width  = (int)ImGui::GetWindowSize().x;
+    int height = (int)ImGui::GetWindowSize().y;
 
     if (!created_frame_buffer) {
         glGenFramebuffers(1, &fbo);
@@ -508,9 +511,7 @@ int main(int, char**)
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
 
             if (ImGui::Button("test_save_window")) {
-                float display_w = ImGui::GetWindowSize().x;
-                float display_h = ImGui::GetWindowSize().y;
-                saveWindowToPNG((int) display_w, (int) display_h, "window.png");
+                saveCurrentWindowToPNG("window.png");
             }
             ImGui::End();
         }
@@ -548,9 +549,7 @@ int main(int, char**)
                 if (save_graph) {
                     auto start = std::chrono::high_resolution_clock::now();
                     save_graph = false;
-                    float display_w = ImGui::GetWindowSize().x;
-                    float display_h = ImGui::GetWindowSize().y;
-                    saveWindowToPNG((int) display_w, (int) display_h, "graph.png");
+                    saveCurrentWindowToPNG("graph.png");
                     std::cout << "Time to save graph: " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start).count() << "ms" << std::endl;
                 }
             }
