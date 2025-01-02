@@ -94,6 +94,7 @@ void saveCurrentWindowToPNG(const char* filename) {
     }
 
     glViewport(0, 0, width, height);
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
     glBindTexture(GL_TEXTURE_2D, texture);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
     glBindTexture(GL_TEXTURE_2D, 0);
@@ -101,7 +102,6 @@ void saveCurrentWindowToPNG(const char* filename) {
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
     glBindRenderbuffer(GL_RENDERBUFFER, 0);
-    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
     auto color = ImGui::GetStyle().Colors[ImGuiCol_WindowBg];
     glClearColor(color.x * color.w, color.y * color.w, color.z * color.w, color.w);
@@ -362,6 +362,7 @@ int main(int, char**)
     bool show_demo_window = false;
     bool show_another_window = false;
     bool save_graph = false;
+    ImVec4 plot_color = ImVec4(0.298039, 0.447059, 0.690196, 1);
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
     ImGuiWindowClass window_class;
@@ -425,6 +426,7 @@ int main(int, char**)
 
 
 
+
         if (ImGui::BeginMenuBar())
         {
             if (ImGui::BeginMenu("Options"))
@@ -467,6 +469,7 @@ int main(int, char**)
             ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
             ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
             ImGui::Separator();
+            ImGui::ColorEdit3("plot color", (float*)&plot_color); // Edit 3 floats representing a color
             ImGui::Text("Triangle Colors");
 //            ImGui::ColorEdit3("Vertex 1", (float*)&vertices[3]);
 //            ImGui::ColorEdit3("Vertex 2", (float*)&vertices[10]);
@@ -475,10 +478,8 @@ int main(int, char**)
             ImGui::Separator();
 
             if (ImGui::Button("save")) {
-                auto start = std::chrono::high_resolution_clock::now();
                 save_graph = true;
 //                saveFrameBufferToPNG(fbo, (int) prev_size.x, (int) prev_size.y, "frame.png");
-                std::cout << "Time to save: " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start).count() << "ms" << std::endl;
             }
 
             if (ImGui::Button("Start recording")) {
@@ -522,96 +523,39 @@ int main(int, char**)
 //            ImGui::Begin("Image Window");
             ImGui::Begin("Image Window", nullptr, ImGuiWindowFlags_NoTitleBar);
 
-            // implot
-            if (true){
-                srand(0);
-                static float xs1[100], ys1[100];
-                for (int i = 0; i < 100; ++i) {
-                    xs1[i] = i * 0.01f;
-                    ys1[i] = xs1[i] + 0.1f * ((float) rand() / (float) RAND_MAX);
-                }
-                static float xs2[50], ys2[50];
-                for (int i = 0; i < 50; i++) {
-                    xs2[i] = 0.25f + 0.2f * ((float) rand() / (float) RAND_MAX);
-                    ys2[i] = 0.75f + 0.2f * ((float) rand() / (float) RAND_MAX);
-                }
 
-                if (ImPlot::BeginPlot("Scatter Plot", ImGui::GetContentRegionAvail())) {
-                    ImPlot::PlotScatter("Data 1", xs1, ys1, 100);
-                    ImPlot::PushStyleVar(ImPlotStyleVar_FillAlpha, 0.25f);
-                    ImPlot::SetNextMarkerStyle(ImPlotMarker_Square, 6, ImPlot::GetColormapColor(1), IMPLOT_AUTO,
-                                               ImPlot::GetColormapColor(1));
-                    ImPlot::PlotScatter("Data 2", xs2, ys2, 50);
-                    ImPlot::PopStyleVar();
-                    ImPlot::EndPlot();
-                }
-
-                if (save_graph) {
-                    auto start = std::chrono::high_resolution_clock::now();
-                    save_graph = false;
-                    saveCurrentWindowToPNG("graph.png");
-                    std::cout << "Time to save graph: " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start).count() << "ms" << std::endl;
-                }
+            srand(0);
+            static float xs1[100], ys1[100];
+            for (int i = 0; i < 100; ++i) {
+                xs1[i] = i * 0.01f;
+                ys1[i] = xs1[i] + 0.1f * ((float) rand() / (float) RAND_MAX);
             }
-//
-//            else {
-//
-//                float display_w = ImGui::GetContentRegionAvail().x;
-//                float display_h = ImGui::GetContentRegionAvail().y;
-//
-//                if (recording) {
-//
-//                    auto w = (int) display_w;
-//                    auto h = (int) display_h;
-//
-//                    if (w % 2 != 0) {
-//                        display_w++;
-//                    }
-//                    if (h % 2 != 0) {
-//                        display_h++;
-//                    }
-//                }
-//
-//                if (prev_size.x != display_w || prev_size.y != display_h) {
-//                    glViewport(0, 0, (int) display_w, (int) display_h);
-//                    glBindTexture(GL_TEXTURE_2D, texture);
-//                    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, (int) display_w, (int) display_h, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-//                    glBindTexture(GL_TEXTURE_2D, 0);
-//                    glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-//                    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (int) display_w, (int) display_h);
-//                    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
-//                    glBindRenderbuffer(GL_RENDERBUFFER, 0);
-//                    prev_size = ImVec2(display_w, display_h);
-//                }
-//
-//                glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-//                glBindBuffer(GL_ARRAY_BUFFER, VBO);
-//                glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-//
-//                glViewport(0, 0, (int) display_w, (int) display_h);
-//                glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
-//                glClear(GL_COLOR_BUFFER_BIT);
-//
-//                // draw our first triangle
-//                glUseProgram(shaderProgram);
-//                glBindVertexArray(VAO); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
-//                //glDrawArrays(GL_TRIANGLES, 0, 6);
-//                glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
-//                // glBindVertexArray(0); // no need to unbind it every time
-//
-//                ImGui::Image(
-//                        (ImTextureID)texture,
-//                        ImGui::GetContentRegionAvail(),
-//                        ImVec2(0, 1),
-//                        ImVec2(1, 0)
-//                );
-//
-//                glBindFramebuffer(GL_FRAMEBUFFER, 0);
-//                if (recording) {
-//                    recordFrame(fbo, (int) display_w, (int) display_h);
-//                }
-//
-//            }
+            static float xs2[50], ys2[50];
+            for (int i = 0; i < 50; i++) {
+                xs2[i] = 0.25f + 0.2f * ((float) rand() / (float) RAND_MAX);
+                ys2[i] = 0.75f + 0.2f * ((float) rand() / (float) RAND_MAX);
+            }
+
+            if (ImPlot::BeginPlot("Scatter Plot", ImGui::GetContentRegionAvail())) {
+                ImPlot::SetNextLineStyle(plot_color);
+                ImPlot::PlotLine("", xs1, ys1, 100);
+                ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 5, plot_color, 1, ImVec4(0, 0, 0, 1));
+                ImPlot::PlotScatter("Data 1", xs1, ys1, 100);
+                ImPlot::PushStyleVar(ImPlotStyleVar_FillAlpha, 0.25f);
+                ImPlot::SetNextMarkerStyle(ImPlotMarker_Square, 6, ImPlot::GetColormapColor(1), IMPLOT_AUTO,
+                                           ImPlot::GetColormapColor(1));
+                ImPlot::PlotScatter("Data 2", xs2, ys2, 50);
+                ImPlot::PopStyleVar();
+                ImPlot::EndPlot();
+            }
+
+            if (save_graph) {
+                auto start = std::chrono::high_resolution_clock::now();
+                save_graph = false;
+                saveCurrentWindowToPNG("graph.png");
+                std::cout << "Time to save graph: " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start).count() << "ms" << std::endl;
+            }
+
 
             ImGui::End();
         }
