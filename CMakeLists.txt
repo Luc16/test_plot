@@ -24,28 +24,28 @@ include_directories(
         external/stb/
         external/imgui/
         external/implot/
+        lib/
 )
 file(GLOB imgui CONFIGURE_DEPENDS "external/imgui/*.cpp")
 file(GLOB implot CONFIGURE_DEPENDS "external/implot/*.cpp")
 
+add_library(glad_lib external/glad/src/glad.c)
+target_include_directories(glad_lib PRIVATE external/glad/include)
+
 find_package(OpenGL REQUIRED)
 
-add_executable(example_window src/example.cpp external/glad/src/glad.c)
+add_executable(example_window src/example.cpp)
 
 target_link_libraries(example_window glfw
-        ${GLFW_LIBRARIES} ${GLAD_LIBRARIES} ${imgui} OpenGL::GL)
+        ${GLFW_LIBRARIES} ${GLAD_LIBRARIES} ${imgui} glad_lib OpenGL::GL)
 
 
-add_executable(main src/main.cpp external/glad/src/glad.c)
+add_executable(initialTests src/initialTests.cpp)
+
+target_link_libraries(initialTests glfw
+        ${GLFW_LIBRARIES} ${GLAD_LIBRARIES} ${imgui} ${implot} glad_lib OpenGL::GL)
+
+add_executable(main src/main.cpp lib/plot.cpp lib/plot.h lib/screen_saver.cpp lib/screen_saver.h)
 
 target_link_libraries(main glfw
-        ${GLFW_LIBRARIES} ${GLAD_LIBRARIES} ${imgui} ${implot} OpenGL::GL)
-
-add_subdirectory(matplotplusplus)
-set(MATPLOTPP_BUILD_EXPERIMENTAL_OPENGL_BACKEND ON CACHE BOOL "Enable OpenGL backend")
-
-add_executable(matplottest src/matplottest.cpp)
-target_link_libraries(matplottest PRIVATE matplot matplot_opengl)
-
-add_subdirectory(morphologica)
-
+        ${GLFW_LIBRARIES} ${GLAD_LIBRARIES} ${imgui} ${implot} glad_lib OpenGL::GL)
