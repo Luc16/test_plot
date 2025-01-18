@@ -45,7 +45,15 @@ add_executable(initialTests src/initialTests.cpp)
 target_link_libraries(initialTests glfw
         ${GLFW_LIBRARIES} ${GLAD_LIBRARIES} ${imgui} ${implot} glad_lib OpenGL::GL)
 
-add_executable(main src/main.cpp lib/plot.cpp lib/plot.h lib/screen_saver.cpp lib/screen_saver.h)
+add_library(iglp
+        lib/figure.hpp lib/figure.cpp
+        lib/screen_saver.cpp lib/screen_saver.hpp
+        lib/control_panel.cpp lib/control_panel.hpp
+        lib/plot.cpp
+        lib/plot.hpp
+)
+
+add_executable(main src/main.cpp)
 
 target_link_libraries(main glfw
-        ${GLFW_LIBRARIES} ${GLAD_LIBRARIES} ${imgui} ${implot} glad_lib OpenGL::GL)
+        ${GLFW_LIBRARIES} ${GLAD_LIBRARIES} ${imgui} ${implot} glad_lib iglp OpenGL::GL)

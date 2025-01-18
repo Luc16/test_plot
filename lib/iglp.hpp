@@ -5,28 +5,13 @@
 #ifndef TEST_PLOT_IGLP_H
 #define TEST_PLOT_IGLP_H
 
-#include "plot.h"
+#include "figure.hpp"
 #include <memory>
 #include <any>
 #include <variant>
 
 namespace iglp {
-  static bool globalInit = false;
-  static std::variant<
-      Plot<signed char>,
-      Plot<unsigned char>,
-      Plot<signed short>,
-      Plot<unsigned short>,
-      Plot<signed int>,
-      Plot<unsigned int>,
-//      Plot<signed long>,
-//      Plot<unsigned long>,
-      Plot<signed long long>,
-      Plot<unsigned long long>,
-      Plot<float>,
-      Plot<double>
-//      Plot<long double>
-  > globalPlot;
+  static Figure globalFigure;
 
   template<typename T>
   std::vector<T> linspace(T start, T end, uint32_t num) {
@@ -47,15 +32,16 @@ namespace iglp {
 
   template<typename T>
   void plot(std::vector<T>& xData, std::vector<T>& yData) {
-    if (!globalInit) {
-      globalInit = true;
-      globalPlot = Plot<T>();
-    }
-    std::get<Plot<T>>(globalPlot).plot(xData, yData);
+    globalFigure.addPlot(xData, yData);
+  }
+
+  template<typename T>
+  void addSlider(const std::string& name, T& value, T min, T max) {
+    globalFigure.addSlider(name, value, min, max);
   }
 
   void show() {
-    std::visit([](auto& plot) { plot.show(); }, globalPlot);
+    globalFigure.show();
   }
 
 }

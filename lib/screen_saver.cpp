@@ -2,7 +2,7 @@
 // Created by luc on 09/01/25.
 //
 
-#include "screen_saver.h"
+#include "screen_saver.hpp"
 
 #define _CRT_SECURE_NO_WARNINGS
 #define STB_IMAGE_IMPLEMENTATION
