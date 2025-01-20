@@ -31,13 +31,22 @@ namespace iglp {
   }
 
   template<typename T>
-  void plot(std::vector<T>& xData, std::vector<T>& yData) {
-    globalFigure.addPlot(xData, yData);
+  void plot(Plot<T> plot) {
+    globalFigure.addPlot(plot);
   }
 
   template<typename T>
   void addSlider(const std::string& name, T& value, T min, T max) {
     globalFigure.addSlider(name, value, min, max);
+  }
+
+  template<typename T>
+  void addDrag(const std::string& name, T& value, float speed, T min, T max) {
+    globalFigure.addDrag(name, value, speed, min, max);
+  }
+
+  void addCheckBox(const std::string& name, bool& value) {
+    globalFigure.addCheckBox(name, value);
   }
 
   void show() {

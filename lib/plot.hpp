@@ -5,6 +5,7 @@
 #ifndef TEST_PLOT_LIB_PLOT_HPP_
 #define TEST_PLOT_LIB_PLOT_HPP_
 
+#include <utility>
 #include <vector>
 #include <imgui.h>
 #include <memory>
@@ -25,7 +26,7 @@ namespace iglp {
   template<typename T>
   class Plot: public BasePlot {
   public:
-    Plot(std::vector<T>& xData, std::vector<T>& yData) : m_XData(xData), m_YData(yData) {
+    Plot(std::string name, std::vector<T>& xData, std::vector<T>& yData) : m_XData(xData), m_YData(yData), m_name(std::move(name)) {
       assert(m_XData.size() == m_YData.size() && "Size mismatch between x and y data");
     }
 
@@ -36,6 +37,7 @@ namespace iglp {
    private:
     std::vector<T>& m_XData;
     std::vector<T>& m_YData;
+    std::string m_name;
     ImVec4 m_plotColor = ImVec4(0.298039, 0.447059, 0.690196, 1);
   };
 
@@ -43,9 +45,9 @@ namespace iglp {
     template<typename T>
     void Plot<T>::draw() const {
       assert(m_XData.size() == m_YData.size() && "Size mismatch between x and y data");
-      ImPlot::SetNextLineStyle(m_plotColor);
+//      ImPlot::SetNextLineStyle(m_plotColor);
 //      ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle);
-      ImPlot::PlotLine("Data 1", m_XData.data(), m_YData.data(), m_XData.size());
+      ImPlot::PlotLine(m_name.c_str(), m_XData.data(), m_YData.data(), m_XData.size());
     }
 
 

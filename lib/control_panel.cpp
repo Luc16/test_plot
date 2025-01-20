@@ -20,4 +20,12 @@ void ControlPanel::draw() {
 
     ImGui::End();
   }
+
+
+void ControlPanel::addCheckBox(const std::string &name, bool &value) {
+  m_widgets.emplace_back([name, &value]() {
+    ImGui::Checkbox(name.c_str(), &value);
+  });
+
+}
 }

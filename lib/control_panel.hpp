@@ -25,8 +25,12 @@ class ControlPanel {
   template<typename T>
   void addSlider(const std::string& name, T& value, T min, T max);
 
+  template<typename T>
+  void addDrag(const std::string& name, T& value, float speed, T min, T max);
+
+  void addCheckBox(const std::string& name, bool& value);
+
   [[nodiscard]] bool hasWidgets() const { return !m_widgets.empty(); }
-  size_t getNumWidgets() const { return m_widgets.size(); }
 
  private:
 
@@ -66,12 +70,20 @@ constexpr ImGuiDataType_ ControlPanel::getType() {
 template<typename T>
 void ControlPanel::addSlider(const std::string &name, T &value, T min, T max) {
   ImGuiDataType_ type = getType<T>();
-  m_widgets.push_back([name, &value, min, max, type]() {
+  m_widgets.emplace_back([name, &value, min, max, type]() {
     ImGui::SliderScalar(name.c_str(), type, &value, &min, &max);
   });
 }
 
+template<typename T>
+void ControlPanel::addDrag(const std::string &name, T &value, float speed, T min, T max) {
+  ImGuiDataType_ type = getType<T>();
+  m_widgets.emplace_back([name, &value, speed, min, max, type]() {
+    ImGui::DragScalar(name.c_str(), type, &value, speed, &min, &max);
+  });
 }
 
+
+}
 
 #endif //TEST_PLOT_LIB_CONTROL_PANEL_HPP_

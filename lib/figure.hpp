@@ -32,23 +32,23 @@ namespace iglp {
     class Figure {
     public:
         Figure() = default;
-//        explicit Figure(const ControlPanel& controlPanel): m_controlPanel(controlPanel) {}
         ~Figure() = default;
 
         void show();
 
-//        const ControlPanel& getControlPanel() { return m_controlPanel; }
 
       template<typename T>
       void addSlider(const std::string& name, T& value, T min, T max) { m_controlPanel.addSlider(name, value, min, max); }
 
       template<typename T>
-      void addPlot(std::vector<T>& xData, std::vector<T>& yData) {
-        m_plots.push_back(std::make_shared<Plot<T>>(xData, yData));
+      void addDrag(const std::string &name, T &value, float speed, T min, T max) { m_controlPanel.addDrag(name, value, speed, min, max); }
+
+      void addCheckBox(const std::string& name, bool& value) { m_controlPanel.addCheckBox(name, value); }
+
+      template<typename T>
+      void addPlot(Plot<T>& plot) {
+        m_plots.push_back(std::make_shared<Plot<T>>(std::move(plot)));
       }
-
-
-
 
     private:
 
@@ -223,7 +223,6 @@ void Figure::show() {
 //            ImGui::ColorEdit3("plot color", (float*)&plot_color); // Edit 3 floats representing a color
 
       if (ImPlot::BeginPlot(" a", ImGui::GetContentRegionAvail())) {
-
         for (const auto &plot : m_plots) {
           plot->draw();
         }

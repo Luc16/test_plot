@@ -14,7 +14,20 @@ int main() {
 
 
   iglp::addSlider("test", y[4], 0.0, 10.0);
-  iglp::plot(x, y);
+  iglp::plot(iglp::Plot("heart", x, y));
+
+
+  auto x2 = iglp::linspace(-4000, 4000, 100);
+  auto y2 = std::vector<int>(x2.size());
+  std::transform(x2.begin(), x2.end(), y2.begin(), [](auto x) {
+      return (30*x)/8000;
+  });
+
+  iglp::plot(iglp::Plot("line", x2, y2));
+
+  iglp::addDrag("test line", y2[50], 0.1, -10, 10);
+
+
   iglp::show();
 
 //  auto x = iglp::linspace(0.0, std::numbers::pi, 100);
