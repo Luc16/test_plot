@@ -51,6 +51,10 @@ add_library(iglp
         lib/control_panel.cpp lib/control_panel.hpp
         lib/plot.cpp
         lib/plot.hpp
+        lib/plotter.cpp
+        lib/plotter.hpp
+        lib/mutable_plot.cpp
+        lib/mutable_plot.hpp
 )
 
 add_executable(main src/main.cpp)

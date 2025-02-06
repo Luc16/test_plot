@@ -36,6 +36,11 @@ namespace iglp {
   }
 
   template<typename T>
+  void plot(Plotter<T> plotter) {
+    globalFigure.addPlotter(plotter);
+  }
+
+  template<typename T>
   void addSlider(const std::string& name, T& value, T min, T max) {
     globalFigure.addSlider(name, value, min, max);
   }

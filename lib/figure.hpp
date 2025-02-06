@@ -21,6 +21,7 @@
 #include "plot.hpp"
 #include "screen_saver.hpp"
 #include "control_panel.hpp"
+#include "plotter.hpp"
 
 static void glfw_error_callback(int error, const char* description)
 {
@@ -47,7 +48,12 @@ namespace iglp {
 
       template<typename T>
       void addPlot(Plot<T>& plot) {
-        m_plots.push_back(std::make_shared<Plot<T>>(std::move(plot)));
+        m_plots.push_back(std::make_unique<Plot<T>>(std::move(plot)));
+      }
+
+      template<typename T>
+      void addPlotter(Plotter<T>& plotter) {
+        m_plotters.push_back(std::make_unique<Plotter<T>>(std::move(plotter)));
       }
 
     private:
@@ -58,21 +64,8 @@ namespace iglp {
         ScreenSaver m_screenSaver;
         ControlPanel m_controlPanel;
 
-//        std::vector<std::variant<
-//            Plot<signed char>,
-//            Plot<unsigned char>,
-//            Plot<signed short>,
-//            Plot<unsigned short>,
-//            Plot<signed int>,
-//            Plot<unsigned int>,
-//            Plot<signed long long>,
-//            Plot<unsigned long long>,
-//            Plot<float>,
-//            Plot<double>
-//        >> m_plots;
-
-
-    std::vector<std::shared_ptr<BasePlot>> m_plots;
+        std::vector<std::unique_ptr<IPlotter>> m_plotters;
+        std::vector<std::unique_ptr<BasePlot>> m_plots;
 
 
     };
@@ -135,8 +128,6 @@ void Figure::show() {
   bool save_graph = false;
   bool is_first_frame = true;
 
-  ImVec4 plot_color = ImVec4(0.298039, 0.447059, 0.690196, 1);
-
   ImGuiWindowClass window_class;
   window_class.DockNodeFlagsOverrideSet = ImGuiDockNodeFlags_NoTabBar;
 
@@ -152,6 +143,10 @@ void Figure::show() {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
+
+    for (auto& plotter : m_plotters) {
+      plotter->updatePlot();
+    }
 
     ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
     ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;
@@ -226,6 +221,11 @@ void Figure::show() {
         for (const auto &plot : m_plots) {
           plot->draw();
         }
+        for (const auto &plotter : m_plotters) {
+          plotter->draw();
+        }
+
+
         ImPlot::EndPlot();
       }
 
