@@ -20,8 +20,6 @@ class ControlPanel {
   ControlPanel();
   ~ControlPanel() = default;
 
-  void draw();
-
   template<typename T>
   void addSlider(const std::string& name, T& value, T min, T max);
 
@@ -34,10 +32,14 @@ class ControlPanel {
 
  private:
 
+  void draw();
+
   template<typename T>
   static constexpr ImGuiDataType_ getType();
   ImGuiWindowClass m_window_class{};
   std::vector<std::function<void()>> m_widgets;
+
+  friend class Figure;
 
 };
 

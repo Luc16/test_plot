@@ -14,17 +14,22 @@
 
 namespace iglp {
 
+template<typename T>
+class BasePlotter;
+
 class BaseMutablePlot {
  public:
+  virtual ~BaseMutablePlot() = default;
+
+ private:
   virtual void draw() const = 0;
 
-  virtual ~BaseMutablePlot() = default;
 };
 
 template<typename T>
 class MutablePlot: public BaseMutablePlot {
  public:
-    MutablePlot(std::string name, std::vector<T>& x, std::vector<T>& y)
+    MutablePlot(std::string name, const std::vector<T>& x, const std::vector<T>& y)
         : xData(x), yData(y), m_name(std::move(name)) {
         assert(xData.size() == yData.size() && "Size mismatch between x and y data");
     }
@@ -39,10 +44,11 @@ class MutablePlot: public BaseMutablePlot {
 
     ~MutablePlot() override = default;
 
-    void draw() const override;
-
     [[nodiscard]] const std::string& getName() const { return m_name; }
 
+ private:
+  void draw() const override;
+    friend class BasePlotter<T>;
  public:
     std::vector<T> xData;
     std::vector<T> yData;

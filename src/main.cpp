@@ -33,9 +33,7 @@ void staticPlotExample() {
 
 void dynamicPlotExample() {
   std::vector<double> x = iglp::linspace(-2.0 * std::numbers::pi, 2.0 * std::numbers::pi, 1000);
-  std::vector<double> y;
-  std::transform(x.begin(), x.end(), std::back_inserter(y),
-                 [](auto x) { return std::sin(x); });
+  std::vector<double> y(x.size(), 0);
 
   double amp = 1, freq = 1;
   iglp::Plotter<double> plotter(iglp::MutablePlot<double>("heart", x, y), [&amp, &freq](iglp::MutablePlot<double> &plot) {
@@ -51,8 +49,42 @@ void dynamicPlotExample() {
   iglp::show();
 }
 
+
+class SquarePlotter : public iglp::BasePlotter<double> {
+ public:
+  SquarePlotter() : BasePlotter("Square") {
+    x = {-1, -1, 1, 1, -1};
+    y = {-1, 1, 1, -1, -1};
+
+    plot.xData = x;
+    plot.yData = y;
+
+    iglp::addDrag("angle", angle, 0.01f, 0.0, 2.0 * std::numbers::pi);
+  }
+
+  void update() override {
+    double cosA = std::cos(angle), sinA = std::sin(angle);
+    for (size_t i = 0; i < x.size(); ++i) {
+      plot.xData[i] = x[i] * cosA - y[i] * sinA;
+      plot.yData[i] = x[i] * sinA + y[i] * cosA;
+    }
+  }
+
+ private:
+  double angle = 0;
+  std::vector<double> x, y;
+};
+
+void dynamicPlotExample2() {
+  auto plotter = std::make_shared<SquarePlotter>();
+  iglp::plot(plotter);
+
+  iglp::show();
+}
+
 int main() {
 //  staticPlotExample();
-    dynamicPlotExample();
+//  dynamicPlotExample();
+  dynamicPlotExample2();
   return 0;
 }

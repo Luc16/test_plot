@@ -12,32 +12,40 @@ namespace iglp {
 
 class IPlotter {
  public:
+  virtual ~IPlotter() = default;
+
+ private:
   virtual void updatePlot() = 0;
 
   virtual void draw() const = 0;
 
-  virtual ~IPlotter() = default;
+  friend class Figure;
 };
 
 template<typename T>
 class BasePlotter: public IPlotter {
  public:
-  explicit BasePlotter(MutablePlot<T> plot): m_plot(std::move(plot)) {}
-
-  virtual void update(iglp::MutablePlot<T> &plot) = 0;
-
-  void updatePlot() override {
-    update(m_plot);
-  }
-
-  void draw() const override {
-      m_plot.draw();
-  }
+  explicit BasePlotter(MutablePlot<T> plot): plot(std::move(plot)) {}
+  explicit BasePlotter(const std::string& name): plot(name, {}, {}) {}
 
   ~BasePlotter() override = default;
 
+ private:
+  virtual void update([[maybe_unused]] iglp::MutablePlot<T> &mutPlot) {};
+  virtual void update() {};
+
+  void updatePlot() override {
+    update(plot);
+    update();
+  }
+
+  void draw() const override {
+      plot.draw();
+  }
+
+
  protected:
-  iglp::MutablePlot<T> m_plot;
+  iglp::MutablePlot<T> plot;
 };
 
 template<typename T>
@@ -48,19 +56,20 @@ class Plotter: public BasePlotter<T> {
   Plotter(const Plotter&) = delete;
   Plotter& operator=(const Plotter&) = delete;
 
-  Plotter(Plotter&& other) noexcept : BasePlotter<T>(std::move(other.m_plot)), m_func(std::move(other.m_func)) {}
+  Plotter(Plotter&& other) noexcept : BasePlotter<T>(std::move(other.plot)), m_func(std::move(other.m_func)) {}
 
   [[nodiscard]] Plotter<T>&& move() {
     return std::move(*this);
   }
-  void update(iglp::MutablePlot<T> &plot) override {
-    m_func(plot);
+
+ private:
+
+  void update(iglp::MutablePlot<T> &mutPlot) override {
+    m_func(mutPlot);
   }
 
-private:
   std::function<void(iglp::MutablePlot<T>&)> m_func;
 };
-
 
 } // namespace iglp
 #endif //TEST_PLOT_LIB_PLOTTER_HPP_

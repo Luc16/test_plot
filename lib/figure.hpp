@@ -53,7 +53,16 @@ namespace iglp {
 
       template<typename T>
       void addPlotter(Plotter<T>& plotter) {
-        m_plotters.push_back(std::make_unique<Plotter<T>>(std::move(plotter)));
+        m_plotters.push_back(std::make_shared<Plotter<T>>(std::move(plotter)));
+      }
+
+      template<typename T>
+      void addPlotter(const std::shared_ptr<BasePlotter<T>>& plotter) {
+        m_plotters.push_back(plotter);
+      }
+
+      void addPlotter(const std::shared_ptr<IPlotter>& plotter) {
+        m_plotters.push_back(plotter);
       }
 
     private:
@@ -64,7 +73,7 @@ namespace iglp {
         ScreenSaver m_screenSaver;
         ControlPanel m_controlPanel;
 
-        std::vector<std::unique_ptr<IPlotter>> m_plotters;
+        std::vector<std::shared_ptr<IPlotter>> m_plotters;
         std::vector<std::unique_ptr<BasePlot>> m_plots;
 
 

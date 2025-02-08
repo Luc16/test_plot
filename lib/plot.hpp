@@ -18,7 +18,11 @@ namespace iglp {
    public:
     virtual ~BasePlot() = 0;
 
+   private:
+
     virtual void draw() const = 0;
+
+    friend class Figure;
   };
 
   inline BasePlot::~BasePlot() = default;
@@ -56,11 +60,12 @@ namespace iglp {
       // std::cout << "Plot " << m_name << " destroyed" << std::endl;
     }
 
-    void draw() const override;
     [[nodiscard]] const std::string& getName() const { return m_name; }
     [[nodiscard]] Plot<T>&& move() { return std::move(*this); }
 
    private:
+    void draw() const override;
+
     std::vector<T> xData;
     std::vector<T> yData;
     std::string m_name;
