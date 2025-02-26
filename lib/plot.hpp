@@ -20,7 +20,7 @@ namespace iglp {
 
    private:
 
-    virtual void draw() const = 0;
+    virtual void draw() = 0;
 
     friend class Figure;
   };
@@ -64,21 +64,27 @@ namespace iglp {
     [[nodiscard]] Plot<T>&& move() { return std::move(*this); }
 
    private:
-    void draw() const override;
+    void draw() override;
 
     std::vector<T> xData;
     std::vector<T> yData;
     std::string m_name;
-    ImVec4 m_plotColor = ImVec4(0.298039, 0.447059, 0.690196, 1);
+    ImVec4 m_plotColor = ImVec4(-1, -1, -1, -1);
   };
 
 
     template<typename T>
-    void Plot<T>::draw() const {
+    void Plot<T>::draw() {
       assert(xData.size() == yData.size() && "Size mismatch between x and y data");
-//      ImPlot::SetNextLineStyle(m_plotColor);
+      bool isColorSet = m_plotColor.x >= 0 && m_plotColor.y >= 0 && m_plotColor.z >= 0 && m_plotColor.w >= 0;
+      if (isColorSet) {
+        ImPlot::SetNextLineStyle(m_plotColor);
+      }
 //      ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle);
       ImPlot::PlotLine(m_name.c_str(), xData.data(), yData.data(), xData.size());
+      if (!isColorSet) {
+        m_plotColor = ImPlot::GetLastItemColor();
+      }
     }
 
 

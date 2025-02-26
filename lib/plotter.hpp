@@ -17,7 +17,7 @@ class IPlotter {
  private:
   virtual void updatePlot() = 0;
 
-  virtual void draw() const = 0;
+  virtual void draw() = 0;
 
   friend class Figure;
 };
@@ -39,7 +39,7 @@ class BasePlotter: public IPlotter {
     update();
   }
 
-  void draw() const override {
+  void draw() override {
       plot.draw();
   }
 
