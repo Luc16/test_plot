@@ -128,6 +128,9 @@ void Figure::show() {
     style.Colors[ImGuiCol_WindowBg].w = 1.0f;
   }
 
+  auto& plot_style = ImPlot::GetStyle();
+  plot_style.FitPadding = ImVec2(0.1f, 0.1f);
+
   // Setup Platform/Renderer backends
   ImGui_ImplGlfw_InitForOpenGL(window, true);
   ImGui_ImplOpenGL3_Init(glsl_version);
@@ -227,6 +230,7 @@ void Figure::show() {
 //            ImGui::ColorEdit3("plot color", (float*)&plot_color); // Edit 3 floats representing a color
 
       if (ImPlot::BeginPlot(" a", ImGui::GetContentRegionAvail())) {
+        // TODO: plot in add order
         for (const auto &plot : m_plots) {
           plot->draw();
         }
